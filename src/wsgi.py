@@ -1,16 +1,20 @@
 from fastapi import FastAPI
 from prometheus_client import start_http_server
 from endpoints import ROUTER
-from logger import logging
+from logger import Logger
+from middleware import middleware
+
 
 APP = FastAPI()
+APP.middleware("http")(middleware)
 
 @APP.on_event("startup")
-async def startup_event():
+def startup_event():
     # Code to execute before the application starts
-    logging.debug("Starting Prometheus HTTP server")
+    logger = Logger()
+    logger.debug("Starting Prometheus HTTP server")
     start_http_server(port=8081)
-    logging.debug("Prometheus HTTP server successfully started")
-    
+    logger.debug("Prometheus HTTP server successfully started")
+
 
 APP.include_router(ROUTER)

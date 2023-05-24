@@ -14,5 +14,5 @@ class User(BaseModel):
     last_name: str
     addresses: list[Address]
     username: str
-    user_id: str
     password: str  # for the sake of the demonstration, this will be plaintext
+    email: str
