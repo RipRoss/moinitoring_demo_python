@@ -1,0 +1,88 @@
+version: "3"
+
+networks:
+  monitoring:
+
+services:
+  loki:
+    image: grafana/loki:2.8.0
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:2.8.0
+    volumes:
+      - /var/log:/var/log
+      - ./docker/config/promtail:/etc/promtail
+      - /var/lib/docker/containers:/var/lib/docker/containers
+    command: -config.file=/etc/promtail/config.yml
+    ports:
+      - "9080:9080"
+    networks:
+      - monitoring
+
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+
+  grafana:
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /etc/grafana/provisioning/datasources
+        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        apiVersion: 1
+        datasources:
+        - name: Loki
+          type: loki
+          access: proxy 
+          orgId: 1
+          url: http://loki:3100
+          basicAuth: false
+          isDefault: true
+          version: 1
+          editable: false
+        - name: prometheus
+          type: prometheus
+          access: proxy 
+          orgId: 1
+          url: http://prometheus:9000
+          basicAuth: false
+          isDefault: false
+          version: 1
+          editable: false
+        EOF
+        /run.sh
+    image: grafana/grafana:latest
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./docker/config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - monitoring
+
+volumes:
+  grafana_data:
+  redis_data:

@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Run Command in src Directory",
+        "type": "python",
+        "request": "launch",
+        "cwd": "${workspaceFolder}/src",
+        "module": "uvicorn",
+        "args": [
+          "wsgi:APP",
+          "--reload"
+        ],
+        "console": "integratedTerminal"
+      }
+    ]
+  }
